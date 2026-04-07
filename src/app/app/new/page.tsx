@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -10,6 +10,77 @@ export default function NewKnowledgeBasePage() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File exceeds maximum size of 10MB.");
+      return;
+    }
+
+    const ext = file.name.toLowerCase().split(".").pop();
+    if (ext !== "pdf" && ext !== "txt") {
+      setError("Unsupported file type. Please upload a .pdf or .txt file.");
+      return;
+    }
+
+    setError("");
+    setUploadStatus(`Parsing ${file.name}...`);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/parse", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to parse file");
+      }
+
+      setContent(data.text);
+      setUploadStatus(`Extracted text from ${file.name}`);
+
+      // Auto-fill name from filename if empty
+      if (!name.trim()) {
+        const baseName = file.name.replace(/\.[^.]+$/, "");
+        setName(baseName);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to parse file");
+      setUploadStatus("");
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    // Reset so the same file can be re-selected
+    e.target.value = "";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +150,7 @@ export default function NewKnowledgeBasePage() {
             Create Knowledge Base
           </h1>
           <p className="text-text-secondary">
-            Give your knowledge base a name and paste the content you want to make searchable.
+            Give your knowledge base a name and paste the content or upload a file.
           </p>
         </div>
 
@@ -108,6 +179,54 @@ export default function NewKnowledgeBasePage() {
             />
           </div>
 
+          {/* File Upload Area */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Upload File
+            </label>
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl px-6 py-8 text-center cursor-pointer transition-colors ${
+                isDragging
+                  ? "border-accent bg-accent-muted"
+                  : "border-border-default hover:border-accent hover:bg-bg-tertiary"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt"
+                onChange={handleFileInput}
+                className="hidden"
+              />
+              <svg
+                className="w-8 h-8 mx-auto mb-3 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                />
+              </svg>
+              <p className="text-sm text-text-secondary mb-1">
+                Drag & drop a file here, or click to browse
+              </p>
+              <p className="text-xs text-text-muted">
+                Supports .pdf and .txt files (max 10MB)
+              </p>
+            </div>
+            {uploadStatus && (
+              <p className="mt-2 text-xs text-success">{uploadStatus}</p>
+            )}
+          </div>
+
           <div>
             <label
               htmlFor="content"
@@ -119,7 +238,7 @@ export default function NewKnowledgeBasePage() {
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste your document text here. The more detailed the content, the better the AI agent can answer questions about it..."
+              placeholder="Paste your document text here, or upload a file above. The more detailed the content, the better the AI agent can answer questions about it..."
               rows={16}
               className="w-full bg-bg-tertiary border border-border-default rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-y"
             />

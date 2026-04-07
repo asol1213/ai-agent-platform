@@ -32,6 +32,8 @@ export default function AppPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -47,7 +49,7 @@ export default function AppPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, scrollToBottom]);
+  }, [messages, streamingContent, scrollToBottom]);
 
   async function selectKnowledgeBase(id: string) {
     const res = await fetch(`/api/knowledge/${id}`);
@@ -82,6 +84,8 @@ export default function AppPage() {
     const userMessage = input.trim();
     setInput("");
     setLoading(true);
+    setIsStreaming(true);
+    setStreamingContent("");
 
     // Optimistically add user message
     const tempUserMsg: ChatMessage = {
@@ -101,10 +105,45 @@ export default function AppPage() {
           message: userMessage,
         }),
       });
-      const data = await res.json();
 
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+
+        // Check if we have the metadata marker
+        const metaIndex = fullText.indexOf("\n\n__MSG_META__");
+        if (metaIndex === -1) {
+          setStreamingContent(fullText);
+        } else {
+          setStreamingContent(fullText.substring(0, metaIndex));
+        }
+      }
+
+      // Extract the saved message metadata
+      const metaIndex = fullText.indexOf("\n\n__MSG_META__");
+      if (metaIndex !== -1) {
+        const metaJson = fullText.substring(metaIndex + "\n\n__MSG_META__".length);
+        const savedMessage = JSON.parse(metaJson) as ChatMessage;
+        setMessages((prev) => [...prev, savedMessage]);
+      } else {
+        // Fallback: create a local message
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: "local-" + Date.now(),
+            role: "assistant",
+            content: fullText,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
       }
     } catch {
       setMessages((prev) => [
@@ -118,6 +157,8 @@ export default function AppPage() {
       ]);
     } finally {
       setLoading(false);
+      setIsStreaming(false);
+      setStreamingContent("");
     }
   }
 
@@ -233,7 +274,7 @@ export default function AppPage() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto">
                 <div className="px-6 py-6 space-y-6">
-                  {messages.length === 0 && (
+                  {messages.length === 0 && !isStreaming && (
                     <div className="text-center py-20">
                       <div className="w-16 h-16 rounded-2xl bg-accent-muted flex items-center justify-center mx-auto mb-4">
                         <svg className="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -266,7 +307,17 @@ export default function AppPage() {
                       </div>
                     </div>
                   ))}
-                  {loading && (
+                  {isStreaming && streamingContent && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-bg-tertiary text-text-primary">
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                          {streamingContent}
+                          <span className="inline-block w-0.5 h-4 bg-accent ml-0.5 animate-pulse" />
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {loading && !streamingContent && (
                     <div className="flex justify-start">
                       <div className="bg-bg-tertiary rounded-2xl px-4 py-3">
                         <div className="flex items-center gap-1.5">

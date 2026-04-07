@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useTheme } from "./theme-provider";
 
@@ -66,6 +67,212 @@ const features = [
   },
 ];
 
+interface DemoMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
+
+function LiveDemo() {
+  const [messages, setMessages] = useState<DemoMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, streamingContent, scrollToBottom]);
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    setLoading(true);
+    setIsStreaming(true);
+    setStreamingContent("");
+
+    const userMsg: DemoMessage = {
+      id: "demo-user-" + Date.now(),
+      role: "user",
+      content: userMessage,
+    };
+    setMessages((prev) => [...prev, userMsg]);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          knowledgeBaseId: "fahrschule-autopilot",
+          message: userMessage,
+        }),
+      });
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+
+        const metaIndex = fullText.indexOf("\n\n__MSG_META__");
+        if (metaIndex === -1) {
+          setStreamingContent(fullText);
+        } else {
+          setStreamingContent(fullText.substring(0, metaIndex));
+        }
+      }
+
+      // Extract the displayed text (without meta)
+      const metaIndex = fullText.indexOf("\n\n__MSG_META__");
+      const displayText = metaIndex !== -1 ? fullText.substring(0, metaIndex) : fullText;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: "demo-assistant-" + Date.now(),
+          role: "assistant",
+          content: displayText,
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: "demo-error-" + Date.now(),
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setIsStreaming(false);
+      setStreamingContent("");
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-border-subtle bg-bg-secondary overflow-hidden shadow-2xl">
+      {/* Chat header */}
+      <div className="px-5 py-3 border-b border-border-subtle flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-text-primary">Live Demo</p>
+          <p className="text-xs text-text-muted">Fahrschule Autopilot Knowledge Base</p>
+        </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+          <span className="text-xs text-text-muted">Online</span>
+        </div>
+      </div>
+
+      {/* Messages area */}
+      <div className="h-80 overflow-y-auto px-5 py-4 space-y-4">
+        {messages.length === 0 && !isStreaming && (
+          <div className="text-center py-8">
+            <p className="text-sm text-text-secondary mb-3">
+              Try asking about the Fahrschule Autopilot platform:
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {["What tech stack is used?", "How does the chatbot work?", "How many API endpoints?"].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => {
+                    setInput(q);
+                  }}
+                  className="px-3 py-1.5 text-xs rounded-full border border-border-default text-text-secondary hover:text-text-primary hover:border-accent transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
+                msg.role === "user"
+                  ? "bg-accent text-white"
+                  : "bg-bg-tertiary text-text-primary"
+              }`}
+            >
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                {msg.content}
+              </p>
+            </div>
+          </div>
+        ))}
+        {isStreaming && streamingContent && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 bg-bg-tertiary text-text-primary">
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                {streamingContent}
+                <span className="inline-block w-0.5 h-4 bg-accent ml-0.5 animate-pulse" />
+              </p>
+            </div>
+          </div>
+        )}
+        {loading && !streamingContent && (
+          <div className="flex justify-start">
+            <div className="bg-bg-tertiary rounded-2xl px-3.5 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-text-muted animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-text-muted animate-pulse [animation-delay:0.2s]" />
+                <div className="w-2 h-2 rounded-full bg-text-muted animate-pulse [animation-delay:0.4s]" />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-border-subtle px-4 py-3">
+        <form onSubmit={sendMessage} className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask about Fahrschule Autopilot..."
+            className="flex-1 bg-bg-tertiary border border-border-default rounded-xl px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="px-3.5 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const { theme, toggle } = useTheme();
 
@@ -125,13 +332,29 @@ export default function LandingPage() {
             >
               Get Started
             </Link>
-            <Link
-              href="/app"
+            <a
+              href="#demo"
               className="px-6 py-3 border border-border-default hover:border-accent text-text-secondary hover:text-text-primary font-medium rounded-lg transition-colors text-base"
             >
-              View Demo
-            </Link>
+              Try Demo
+            </a>
           </div>
+        </div>
+      </section>
+
+      {/* Live Demo */}
+      <section id="demo" className="max-w-6xl mx-auto px-6 py-20">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-text-primary mb-4">
+            Try it now
+          </h2>
+          <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+            This is a live demo powered by the &ldquo;Fahrschule Autopilot&rdquo; knowledge base.
+            Ask any question and see the streaming AI response in real time.
+          </p>
+        </div>
+        <div className="max-w-2xl mx-auto">
+          <LiveDemo />
         </div>
       </section>
 

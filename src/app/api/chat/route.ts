@@ -42,7 +42,31 @@ export async function POST(request: Request) {
   // Save assistant message
   const assistantMessage = addChatMessage(knowledgeBaseId, "assistant", responseText);
 
-  return Response.json({ message: assistantMessage });
+  // Stream the response word by word
+  const words = responseText.split(/(\s+)/); // preserve whitespace tokens
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      for (const word of words) {
+        controller.enqueue(encoder.encode(word));
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+      // Send a final event with the saved message metadata
+      controller.enqueue(
+        encoder.encode(`\n\n__MSG_META__${JSON.stringify(assistantMessage)}`)
+      );
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }
 
 function getResponseIntro(query: string): string {
