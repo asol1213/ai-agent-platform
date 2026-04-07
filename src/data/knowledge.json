@@ -73,6 +73,50 @@
           "timestamp": "2026-04-07T12:20:23.726Z"
         }
       ]
+    },
+    {
+      "id": "framework-guide-mnol8s1n",
+      "name": "Framework Guide",
+      "content": "Next.js is a React framework for production. It supports server-side rendering and static generation. TypeScript works out of the box. The App Router uses file-based routing with layout and page files. Supabase is a PostgreSQL database with realtime subscriptions.",
+      "createdAt": "2026-04-07T12:21:13.595Z",
+      "chatHistory": [
+        {
+          "id": "msg-mnol8s30y7eo",
+          "role": "user",
+          "content": "What is Next.js?",
+          "timestamp": "2026-04-07T12:21:13.644Z"
+        },
+        {
+          "id": "msg-mnol8s3123zl",
+          "role": "assistant",
+          "content": "Based on the knowledge base, here's the relevant information:\n\nNext.js is a React framework for production.",
+          "timestamp": "2026-04-07T12:21:13.645Z"
+        },
+        {
+          "id": "msg-mnol8s3e8746",
+          "role": "user",
+          "content": "Tell me about Supabase",
+          "timestamp": "2026-04-07T12:21:13.658Z"
+        },
+        {
+          "id": "msg-mnol8s3ezagg",
+          "role": "assistant",
+          "content": "Here's what I found in the knowledge base:\n\nSupabase is a PostgreSQL database with realtime subscriptions.",
+          "timestamp": "2026-04-07T12:21:13.658Z"
+        },
+        {
+          "id": "msg-mnol8s3v78vr",
+          "role": "user",
+          "content": "Does it support TypeScript?",
+          "timestamp": "2026-04-07T12:21:13.675Z"
+        },
+        {
+          "id": "msg-mnol8s3vhdxa",
+          "role": "assistant",
+          "content": "Here's what I found in the knowledge base:\n\nIt supports server-side rendering and static generation.\n\nTypeScript works out of the box.",
+          "timestamp": "2026-04-07T12:21:13.675Z"
+        }
+      ]
     }
   ]
 }

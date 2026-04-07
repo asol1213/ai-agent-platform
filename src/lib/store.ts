@@ -136,8 +136,8 @@ export function findRelevantChunks(content: string, query: string, topK = 3): st
 
   const queryWords = query
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
     .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9.-]/g, ""))
     .filter((w) => w.length > 1 && !stopWords.has(w));
 
   if (queryWords.length === 0) return [];
@@ -148,16 +148,10 @@ export function findRelevantChunks(content: string, query: string, topK = 3): st
     let score = 0;
 
     for (const word of queryWords) {
-      // Exact word match (higher weight)
-      const wordRegex = new RegExp(`\\b${word}\\b`, "gi");
-      const matches = chunkLower.match(wordRegex);
-      if (matches) {
-        score += matches.length * 2;
-      }
-
-      // Partial/substring match (lower weight)
-      if (chunkLower.includes(word)) {
-        score += 1;
+      // Substring match — works for "next.js", "typescript", compound words
+      const occurrences = chunkLower.split(word).length - 1;
+      if (occurrences > 0) {
+        score += occurrences * 3;
       }
     }
 
