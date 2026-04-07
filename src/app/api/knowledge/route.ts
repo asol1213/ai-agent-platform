@@ -1,4 +1,4 @@
-import { getAllKnowledgeBases, createKnowledgeBase } from "@/lib/store";
+import { getAllKnowledgeBases, createKnowledgeBase, KnowledgeBaseSource } from "@/lib/store";
 
 export async function GET() {
   const knowledgeBases = getAllKnowledgeBases();
@@ -7,7 +7,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, content } = body;
+  const { name, content, sources } = body as {
+    name?: string;
+    content?: string;
+    sources?: KnowledgeBaseSource[];
+  };
 
   if (!name || !content) {
     return Response.json(
@@ -23,6 +27,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const kb = createKnowledgeBase(name, content);
+  const kb = createKnowledgeBase(name, content, sources);
   return Response.json({ knowledgeBase: kb }, { status: 201 });
 }

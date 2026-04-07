@@ -4,10 +4,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useTheme } from "../theme-provider";
 
+interface KnowledgeBaseSource {
+  name: string;
+  type: "pdf" | "txt" | "url" | "text";
+  chars: number;
+}
+
 interface KnowledgeBaseSummary {
   id: string;
   name: string;
   createdAt: string;
+  sources: KnowledgeBaseSource[];
 }
 
 interface ChatMessage {
@@ -247,6 +254,11 @@ export default function AppPage() {
                       }`}
                     >
                       <div className="font-medium truncate pr-6">{kb.name}</div>
+                      {kb.sources && kb.sources.length > 0 && (
+                        <div className="text-xs text-text-muted mt-0.5 truncate">
+                          {kb.sources.length} source{kb.sources.length > 1 ? "s" : ""}: {kb.sources.map((s) => s.name).join(", ")}
+                        </div>
+                      )}
                       <div className="text-xs text-text-muted mt-0.5">
                         {new Date(kb.createdAt).toLocaleDateString()}
                       </div>

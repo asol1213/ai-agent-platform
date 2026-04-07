@@ -51,6 +51,7 @@ describe("CRUD operations", () => {
     expect(kb.chatHistory).toEqual([]);
     expect(kb.id).toBeTruthy();
     expect(kb.createdAt).toBeTruthy();
+    expect(kb.sources).toEqual([{ name: "Manual input", type: "text", chars: 26 }]);
   });
 
   it("lists all knowledge bases without content or chatHistory", () => {

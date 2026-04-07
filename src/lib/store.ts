@@ -10,12 +10,19 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface KnowledgeBaseSource {
+  name: string;
+  type: "pdf" | "txt" | "url" | "text";
+  chars: number;
+}
+
 export interface KnowledgeBase {
   id: string;
   name: string;
   content: string;
   createdAt: string;
   chatHistory: ChatMessage[];
+  sources: KnowledgeBaseSource[];
 }
 
 interface StoreData {
@@ -49,10 +56,11 @@ function writeStore(data: StoreData): void {
 
 export function getAllKnowledgeBases(): Omit<KnowledgeBase, "content" | "chatHistory">[] {
   const data = readStore();
-  return data.knowledgeBases.map(({ id, name, createdAt }) => ({
+  return data.knowledgeBases.map(({ id, name, createdAt, sources }) => ({
     id,
     name,
     createdAt,
+    sources: sources || [{ name: "Manual input", type: "text" as const, chars: 0 }],
   }));
 }
 
@@ -61,7 +69,11 @@ export function getKnowledgeBase(id: string): KnowledgeBase | null {
   return data.knowledgeBases.find((kb) => kb.id === id) ?? null;
 }
 
-export function createKnowledgeBase(name: string, content: string): KnowledgeBase {
+export function createKnowledgeBase(
+  name: string,
+  content: string,
+  sources?: KnowledgeBaseSource[]
+): KnowledgeBase {
   const data = readStore();
   const id = name
     .toLowerCase()
@@ -77,6 +89,9 @@ export function createKnowledgeBase(name: string, content: string): KnowledgeBas
     content,
     createdAt: new Date().toISOString(),
     chatHistory: [],
+    sources: sources && sources.length > 0
+      ? sources
+      : [{ name: "Manual input", type: "text" as const, chars: content.length }],
   };
 
   data.knowledgeBases.push(kb);

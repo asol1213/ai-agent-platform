@@ -1,33 +1,39 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface Source {
+  name: string;
+  type: "pdf" | "txt" | "url" | "text";
+  chars: number;
+}
+
 export default function NewKnowledgeBasePage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [uploadStatus, setUploadStatus] = useState("");
+  const [parseStatus, setParseStatus] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [sources, setSources] = useState<Source[]>([]);
+  const [urlInput, setUrlInput] = useState("");
+  const [fetchingUrl, setFetchingUrl] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleFile(file: File) {
+  async function parseFile(file: File, index: number, total: number): Promise<{ text: string; name: string; type: "pdf" | "txt" } | null> {
     if (file.size > 10 * 1024 * 1024) {
-      setError("File exceeds maximum size of 10MB.");
-      return;
+      setError(`File "${file.name}" exceeds maximum size of 10MB.`);
+      return null;
     }
 
     const ext = file.name.toLowerCase().split(".").pop();
     if (ext !== "pdf" && ext !== "txt") {
-      setError("Unsupported file type. Please upload a .pdf or .txt file.");
-      return;
+      setError(`Unsupported file type for "${file.name}". Please upload .pdf or .txt files.`);
+      return null;
     }
 
-    setError("");
-    setUploadStatus(`Parsing ${file.name}...`);
+    setParseStatus(`Parsing file ${index + 1}/${total}: ${file.name}...`);
 
     try {
       let text = "";
@@ -35,7 +41,6 @@ export default function NewKnowledgeBasePage() {
       if (ext === "txt") {
         text = await file.text();
       } else {
-        // Client-side PDF parsing with pdfjs-dist
         const pdfjsModule = await import("pdfjs-dist");
         const pdfjsLib = pdfjsModule.default || pdfjsModule;
         if (pdfjsLib.GlobalWorkerOptions) {
@@ -50,7 +55,7 @@ export default function NewKnowledgeBasePage() {
         const pageTexts: string[] = [];
 
         for (let i = 1; i <= totalPages; i++) {
-          setUploadStatus(`Parsing page ${i}/${totalPages}...`);
+          setParseStatus(`Parsing file ${index + 1}/${total}: ${file.name} (page ${i}/${totalPages})...`);
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
           const pageText = textContent.items
@@ -62,24 +67,47 @@ export default function NewKnowledgeBasePage() {
         text = pageTexts.join("\n\n");
       }
 
-      setContent(text);
-      setUploadStatus(`✓ Extracted text from ${file.name}`);
-
-      if (!name.trim()) {
-        setName(file.name.replace(/\.[^.]+$/, ""));
-      }
+      return { text, name: file.name, type: ext as "pdf" | "txt" };
     } catch (err) {
-      console.error("PDF parse error:", err);
-      setError(`Failed to parse file: ${err instanceof Error ? err.message : "Unknown error"}. Try pasting the text manually instead.`);
-      setUploadStatus("");
+      console.error(`Parse error for ${file.name}:`, err);
+      setError(`Failed to parse "${file.name}": ${err instanceof Error ? err.message : "Unknown error"}.`);
+      return null;
+    }
+  }
+
+  async function handleFiles(files: FileList | File[]) {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+
+    setError("");
+    const newTexts: string[] = [];
+    const newSources: Source[] = [];
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const result = await parseFile(fileArray[i], i, fileArray.length);
+      if (result) {
+        newTexts.push(`\n\n--- ${result.name} ---\n\n${result.text}`);
+        newSources.push({ name: result.name, type: result.type, chars: result.text.length });
+      }
+    }
+
+    if (newTexts.length > 0) {
+      setContent((prev) => prev + newTexts.join(""));
+      setSources((prev) => [...prev, ...newSources]);
+      setParseStatus(`Parsed ${newTexts.length} file${newTexts.length > 1 ? "s" : ""} successfully.`);
+
+      if (!name.trim() && fileArray.length === 1) {
+        setName(fileArray[0].name.replace(/\.[^.]+$/, ""));
+      }
     }
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -93,10 +121,69 @@ export default function NewKnowledgeBasePage() {
   }
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-    // Reset so the same file can be re-selected
+    const files = e.target.files;
+    if (files && files.length > 0) handleFiles(files);
     e.target.value = "";
+  }
+
+  async function handleFetchUrl() {
+    const url = urlInput.trim();
+    if (!url) return;
+
+    setError("");
+    setFetchingUrl(true);
+    setParseStatus(`Fetching ${url}...`);
+
+    try {
+      const res = await fetch("/api/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to fetch URL");
+        setParseStatus("");
+        setFetchingUrl(false);
+        return;
+      }
+
+      const text = data.text as string;
+      const title = data.title as string;
+
+      setContent((prev) => prev + `\n\n--- ${url} ---\n\n${text}`);
+      setSources((prev) => [...prev, { name: title || url, type: "url", chars: text.length }]);
+      setParseStatus(`Fetched "${title}" successfully.`);
+      setUrlInput("");
+    } catch (err) {
+      setError(`Failed to fetch URL: ${err instanceof Error ? err.message : "Network error"}`);
+      setParseStatus("");
+    } finally {
+      setFetchingUrl(false);
+    }
+  }
+
+  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const newContent = e.target.value;
+    setContent(newContent);
+
+    // Update or add "Manual input" source tracking
+    const hasManualSource = sources.some((s) => s.type === "text");
+    const otherSourcesChars = sources
+      .filter((s) => s.type !== "text")
+      .reduce((sum, s) => sum + s.chars, 0);
+    const manualChars = Math.max(0, newContent.length - otherSourcesChars);
+
+    if (manualChars > 0 && !hasManualSource) {
+      setSources((prev) => [...prev, { name: "Manual input", type: "text", chars: manualChars }]);
+    } else if (hasManualSource) {
+      setSources((prev) =>
+        prev.map((s) => (s.type === "text" ? { ...s, chars: manualChars } : s))
+          .filter((s) => s.type !== "text" || s.chars > 0)
+      );
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -122,10 +209,13 @@ export default function NewKnowledgeBasePage() {
     setLoading(true);
     setError("");
 
+    // Build final sources list
+    const finalSources = sources.length > 0 ? sources : [{ name: "Manual input", type: "text" as const, chars: trimmedContent.length }];
+
     const res = await fetch("/api/knowledge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: trimmedName, content: trimmedContent }),
+      body: JSON.stringify({ name: trimmedName, content: trimmedContent, sources: finalSources }),
     }).catch((err) => {
       setError("Network error: " + (err instanceof Error ? err.message : "Failed to connect"));
       setLoading(false);
@@ -141,9 +231,17 @@ export default function NewKnowledgeBasePage() {
       return;
     }
 
-    // Success — navigate
     window.location.href = "/app";
   }
+
+  const sourceTypeIcon = (type: string) => {
+    switch (type) {
+      case "pdf": return "PDF";
+      case "txt": return "TXT";
+      case "url": return "URL";
+      default: return "Text";
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -175,7 +273,7 @@ export default function NewKnowledgeBasePage() {
             Create Knowledge Base
           </h1>
           <p className="text-text-secondary">
-            Give your knowledge base a name and paste the content or upload a file.
+            Give your knowledge base a name and add content from files, URLs, or paste text directly.
           </p>
         </div>
 
@@ -204,10 +302,68 @@ export default function NewKnowledgeBasePage() {
             />
           </div>
 
+          {/* Sources list */}
+          {sources.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Sources ({sources.length})
+              </label>
+              <div className="bg-bg-tertiary border border-border-default rounded-xl p-3 space-y-1.5">
+                {sources.map((source, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <span className="text-success">&#10003;</span>
+                    <span className="text-text-primary truncate flex-1">{source.name}</span>
+                    <span className="text-xs text-text-muted px-1.5 py-0.5 rounded bg-bg-hover">
+                      {sourceTypeIcon(source.type)}
+                    </span>
+                    <span className="text-xs text-text-muted">
+                      {source.chars.toLocaleString()} chars
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* URL Input */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Add URL
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com/page"
+                className="flex-1 bg-bg-tertiary border border-border-default rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleFetchUrl(); } }}
+              />
+              <button
+                type="button"
+                onClick={handleFetchUrl}
+                disabled={fetchingUrl || !urlInput.trim()}
+                className="px-5 py-3 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors text-sm shrink-0"
+              >
+                {fetchingUrl ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Fetching...
+                  </span>
+                ) : (
+                  "Fetch"
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* File Upload Area */}
           <div>
             <label className="block text-sm font-medium text-text-primary mb-2">
-              Upload File
+              Upload Files
             </label>
             <div
               onDrop={handleDrop}
@@ -224,6 +380,7 @@ export default function NewKnowledgeBasePage() {
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,.txt"
+                multiple
                 onChange={handleFileInput}
                 className="hidden"
               />
@@ -241,14 +398,14 @@ export default function NewKnowledgeBasePage() {
                 />
               </svg>
               <p className="text-sm text-text-secondary mb-1">
-                Drag & drop a file here, or click to browse
+                Drag & drop files here, or click to browse
               </p>
               <p className="text-xs text-text-muted">
-                Supports .pdf and .txt files (max 10MB)
+                Supports multiple .pdf and .txt files (max 10MB each)
               </p>
             </div>
-            {uploadStatus && (
-              <p className="mt-2 text-xs text-success">{uploadStatus}</p>
+            {parseStatus && (
+              <p className="mt-2 text-xs text-success">{parseStatus}</p>
             )}
           </div>
 
@@ -262,8 +419,8 @@ export default function NewKnowledgeBasePage() {
             <textarea
               id="content"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste your document text here, or upload a file above. The more detailed the content, the better the AI agent can answer questions about it..."
+              onChange={handleContentChange}
+              placeholder="Paste your document text here, or add content via files/URLs above. The more detailed the content, the better the AI agent can answer questions about it..."
               rows={16}
               className="w-full bg-bg-tertiary border border-border-default rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-y"
             />
