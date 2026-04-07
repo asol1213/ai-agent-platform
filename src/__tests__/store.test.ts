@@ -5,6 +5,7 @@ import {
   createKnowledgeBase,
   addChatMessage,
   findRelevantChunks,
+  _resetCache,
 } from "../lib/store";
 
 // Mock fs module
@@ -26,6 +27,7 @@ vi.mock("fs", () => {
 
 // Reset store before each test
 beforeEach(async () => {
+  _resetCache();
   const fs = await import("fs");
   const empty = JSON.stringify({ knowledgeBases: [] });
   (fs.default.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(empty);

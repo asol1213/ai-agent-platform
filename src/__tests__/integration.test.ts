@@ -24,8 +24,10 @@ import {
   PATCH as patchKBRoute,
 } from "../app/api/knowledge/[id]/route";
 import { POST as chatRoute } from "../app/api/chat/route";
+import { _resetCache } from "../lib/store";
 
 beforeEach(async () => {
+  _resetCache();
   const fs = await import("fs");
   const empty = JSON.stringify({ knowledgeBases: [] });
   (fs.default.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(empty);

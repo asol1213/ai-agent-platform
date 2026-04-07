@@ -199,3 +199,8 @@ export function findRelevantChunks(content: string, query: string, topK = 3): st
     .slice(0, topK)
     .map((s) => s.chunk);
 }
+
+/** Reset in-memory cache — used in tests */
+export function _resetCache(): void {
+  memoryStore = null;
+}
