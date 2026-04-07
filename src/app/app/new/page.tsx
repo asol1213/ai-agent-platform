@@ -129,7 +129,7 @@ export default function NewKnowledgeBasePage() {
         throw new Error(data.error || "Failed to create knowledge base");
       }
 
-      router.push("/app");
+      window.location.href = "/app";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

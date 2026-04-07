@@ -216,15 +216,15 @@ export default function AppPage() {
           } transition-all duration-200 border-r border-border-subtle bg-bg-secondary flex flex-col overflow-hidden shrink-0`}
         >
           <div className="p-4 border-b border-border-subtle">
-            <Link
+            <a
               href="/app/new"
-              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
               New Knowledge Base
-            </Link>
+            </a>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             <p className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wider">
