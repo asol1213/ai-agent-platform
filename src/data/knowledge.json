@@ -53,6 +53,42 @@
           "role": "assistant",
           "content": "Based on the knowledge base, here's the relevant information:\n\nFahrschule Autopilot is a comprehensive SaaS platform built for driving schools in Germany. The platform spans 37 pages of functionality and integrates 72 API endpoints to power every aspect of driving school operations.\n\nCore Architecture: The platform is built on a modern stack with Next.js for the frontend, Supabase for the backend database and authentication, and n8n for workflow automation. The system uses a multi-tenant architecture where each driving school operates in an isolated environment with their own data.\n\nStudent Management: The platform includes a complete student lifecycle management system — from initial registration and document verification through theory lessons, practical driving sessions, exam scheduling, and license issuance tracking. Students can view their progress, book lessons, and communicate with instructors through a dedicated portal.",
           "timestamp": "2026-04-07T13:08:16.404Z"
+        },
+        {
+          "id": "msg-mnovq0ok0s6d",
+          "role": "user",
+          "content": "was sind seine spezialgebiete?",
+          "timestamp": "2026-04-07T17:14:34.100Z"
+        },
+        {
+          "id": "msg-mnovq1h4c0vk",
+          "role": "assistant",
+          "content": "Das spezielle Gebiet von Fahrschule Autopilot ist die Verwaltung und Automatisierung von Fahrschul-Operationen in Deutschland. Die Plattform bietet eine umfassende Lösung für Fahrschulen, um ihre täglichen Aufgaben zu erleichtern und zu optimieren. Sie umfasst 37 Seiten an Funktionalität und integriert 72 API-Endpunkte, um alle Aspekte der Fahrschul-Operationen abzudecken.",
+          "timestamp": "2026-04-07T17:14:35.128Z"
+        },
+        {
+          "id": "msg-mnovq3220lju",
+          "role": "user",
+          "content": "what is his name?",
+          "timestamp": "2026-04-07T17:14:37.178Z"
+        },
+        {
+          "id": "msg-mnovq400n3w8",
+          "role": "assistant",
+          "content": "I don't have that specific information in the knowledge base. The provided context is about the \"Fahrschule Autopilot — SaaS Platform\", specifically its scheduling engine and its capabilities. If you have questions about the platform or its features, I'd be happy to help.",
+          "timestamp": "2026-04-07T17:14:38.400Z"
+        },
+        {
+          "id": "msg-mnovq5engatn",
+          "role": "user",
+          "content": "how many API routes does it have?",
+          "timestamp": "2026-04-07T17:14:40.223Z"
+        },
+        {
+          "id": "msg-mnovq5nqel49",
+          "role": "assistant",
+          "content": "The Fahrschule Autopilot SaaS platform has 72 API endpoints, organized into logical groups to power every aspect of driving school operations.",
+          "timestamp": "2026-04-07T17:14:40.550Z"
         }
       ]
     }

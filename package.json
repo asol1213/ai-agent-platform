@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "groq-sdk": "^1.1.2",
     "next": "16.2.2",
     "pdfjs-dist": "^4.8.69",
     "react": "19.2.4",
