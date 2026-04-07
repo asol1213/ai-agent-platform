@@ -28,8 +28,9 @@ export async function POST(request: Request) {
   let responseText: string;
 
   if (relevantChunks.length === 0) {
-    responseText =
-      "I couldn't find relevant information about that in the knowledge base. Try rephrasing your question or asking about a different topic covered in the documents.";
+    // Fallback: show beginning of the document
+    const preview = kb.content.slice(0, 500) + (kb.content.length > 500 ? "..." : "");
+    responseText = `Here's an overview of the knowledge base content:\n\n${preview}`;
   } else {
     // Format a natural-looking response from the chunks
     const intro = getResponseIntro(message);

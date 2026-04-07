@@ -147,30 +147,41 @@ export function findRelevantChunks(content: string, query: string, topK = 3): st
     chunks = [content.trim()];
   }
 
-  // Extract keywords from query (remove stop words, lowercase)
+  // Stop words (English + German)
   const stopWords = new Set([
+    // English
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
     "have", "has", "had", "do", "does", "did", "will", "would", "could",
-    "should", "may", "might", "shall", "can", "need", "dare", "ought",
-    "used", "to", "of", "in", "for", "on", "with", "at", "by", "from",
-    "as", "into", "through", "during", "before", "after", "above", "below",
-    "between", "out", "off", "over", "under", "again", "further", "then",
-    "once", "here", "there", "when", "where", "why", "how", "all", "both",
-    "each", "few", "more", "most", "other", "some", "such", "no", "nor",
-    "not", "only", "own", "same", "so", "than", "too", "very", "just",
-    "don", "now", "and", "but", "or", "if", "while", "that", "this",
-    "what", "which", "who", "whom", "it", "its", "i", "me", "my", "we",
-    "our", "you", "your", "he", "she", "they", "them", "their", "about",
-    "tell", "describe", "explain", "many", "much", "does", "what's",
+    "should", "may", "might", "can", "to", "of", "in", "for", "on", "with",
+    "at", "by", "from", "as", "into", "through", "and", "but", "or", "if",
+    "that", "this", "what", "which", "who", "it", "its", "i", "me", "my",
+    "we", "our", "you", "your", "he", "she", "they", "them", "their",
+    // German
+    "der", "die", "das", "ein", "eine", "und", "oder", "aber", "ist", "sind",
+    "war", "hat", "haben", "wird", "werden", "kann", "von", "zu", "mit",
+    "auf", "für", "aus", "bei", "nach", "über", "unter", "vor", "wie",
+    "was", "wer", "wo", "wann", "warum", "ich", "du", "er", "sie", "es",
+    "wir", "ihr", "sein", "seine", "seiner", "seinem", "seinen", "ihre",
+    "nicht", "auch", "noch", "schon", "nur", "sehr", "mehr", "hier",
+    "dann", "wenn", "als", "so", "doch", "mal", "dem", "den", "des",
   ]);
 
+  // Keep unicode chars (for German umlauts etc), remove only punctuation
   const queryWords = query
     .toLowerCase()
     .split(/\s+/)
-    .map((w) => w.replace(/[^a-z0-9.-]/g, ""))
+    .map((w) => w.replace(/[^\p{L}\p{N}.-]/gu, ""))
     .filter((w) => w.length > 1 && !stopWords.has(w));
 
-  if (queryWords.length === 0) return [];
+  // If ALL words were stop words, use the full query as a single search term
+  if (queryWords.length === 0) {
+    const fallback = query.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").trim();
+    if (fallback.length > 2) {
+      // Return first chunks as general context
+      return chunks.slice(0, topK);
+    }
+    return [];
+  }
 
   // Score each chunk by keyword overlap
   const scored = chunks.map((chunk) => {
@@ -178,26 +189,41 @@ export function findRelevantChunks(content: string, query: string, topK = 3): st
     let score = 0;
 
     for (const word of queryWords) {
-      // Substring match — works for "next.js", "typescript", compound words
+      // Substring match
       const occurrences = chunkLower.split(word).length - 1;
       if (occurrences > 0) {
         score += occurrences * 3;
       }
+      // Partial match (first 4 chars) — catches word stems
+      if (word.length >= 4) {
+        const stem = word.slice(0, 4);
+        const stemMatches = chunkLower.split(stem).length - 1;
+        if (stemMatches > 0) {
+          score += stemMatches;
+        }
+      }
     }
 
-    // Boost score for chunks that contain multiple different query words
+    // Boost for multiple different keyword matches
     const uniqueMatches = queryWords.filter((w) => chunkLower.includes(w));
     score += uniqueMatches.length * 3;
 
     return { chunk, score };
   });
 
-  // Sort by score descending, take top K
-  return scored
+  const results = scored
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, topK)
     .map((s) => s.chunk);
+
+  // If no keyword matches found, return first chunks as general context
+  // This ensures the user always gets SOMETHING instead of "not found"
+  if (results.length === 0 && chunks.length > 0) {
+    return chunks.slice(0, Math.min(topK, 2));
+  }
+
+  return results;
 }
 
 /** Reset in-memory cache — used in tests */
