@@ -93,6 +93,24 @@ export function addChatMessage(
   return message;
 }
 
+export function deleteKnowledgeBase(id: string): boolean {
+  const data = readStore();
+  const index = data.knowledgeBases.findIndex((kb) => kb.id === id);
+  if (index === -1) return false;
+  data.knowledgeBases.splice(index, 1);
+  writeStore(data);
+  return true;
+}
+
+export function clearChatHistory(knowledgeBaseId: string): boolean {
+  const data = readStore();
+  const kb = data.knowledgeBases.find((k) => k.id === knowledgeBaseId);
+  if (!kb) return false;
+  kb.chatHistory = [];
+  writeStore(data);
+  return true;
+}
+
 /**
  * Smart keyword matching: finds the most relevant paragraphs from the knowledge base
  * based on keyword overlap with the user's question.

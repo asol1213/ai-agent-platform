@@ -36,6 +36,23 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f0f1f3;
+  --bg-hover: #e8e9ec;
+  --border-color: #d1d5db;
+  --border-subtle: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-muted: rgba(99, 102, 241, 0.12);
+  --success: #16a34a;
+  --danger: #dc2626;
+}
+
 body {
   background: var(--bg-primary);
   color: var(--text-primary);

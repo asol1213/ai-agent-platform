@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTheme } from "./theme-provider";
 
 const features = [
   {
@@ -64,6 +67,8 @@ const features = [
 ];
 
 export default function LandingPage() {
+  const { theme, toggle } = useTheme();
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -77,12 +82,21 @@ export default function LandingPage() {
             </div>
             <span className="text-lg font-semibold text-text-primary">AgentPlatform</span>
           </div>
-          <Link
-            href="/app"
-            className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            Launch App
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggle}
+              className="p-2 rounded-lg hover:bg-bg-hover text-text-secondary transition-colors text-lg"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
+            </button>
+            <Link
+              href="/app"
+              className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Launch App
+            </Link>
+          </div>
         </div>
       </nav>
 

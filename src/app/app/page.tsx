@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useTheme } from "../theme-provider";
 
 interface KnowledgeBaseSummary {
   id: string;
@@ -25,6 +26,7 @@ interface KnowledgeBaseFull {
 }
 
 export default function AppPage() {
+  const { theme, toggle } = useTheme();
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBaseSummary[]>([]);
   const [selectedKb, setSelectedKb] = useState<KnowledgeBaseFull | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -52,6 +54,25 @@ export default function AppPage() {
     const data = await res.json();
     setSelectedKb(data.knowledgeBase);
     setMessages(data.knowledgeBase.chatHistory);
+  }
+
+  async function deleteKnowledgeBase(id: string) {
+    await fetch(`/api/knowledge/${id}`, { method: "DELETE" });
+    setKnowledgeBases((prev) => prev.filter((kb) => kb.id !== id));
+    if (selectedKb?.id === id) {
+      setSelectedKb(null);
+      setMessages([]);
+    }
+  }
+
+  async function clearChat() {
+    if (!selectedKb) return;
+    await fetch(`/api/knowledge/${selectedKb.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clearChat" }),
+    });
+    setMessages([]);
   }
 
   async function sendMessage(e: React.FormEvent) {
@@ -122,12 +143,28 @@ export default function AppPage() {
             <span className="font-semibold text-text-primary text-sm">AgentPlatform</span>
           </Link>
         </div>
-        {selectedKb && (
-          <span className="text-sm text-text-secondary truncate max-w-xs">
-            {selectedKb.name}
-          </span>
-        )}
-        <div className="w-20" />
+        <div className="flex items-center gap-2">
+          {selectedKb && (
+            <span className="text-sm text-text-secondary truncate max-w-xs">
+              {selectedKb.name}
+            </span>
+          )}
+          {selectedKb && (
+            <button
+              onClick={clearChat}
+              className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-md transition-colors"
+            >
+              Clear Chat
+            </button>
+          )}
+          <button
+            onClick={toggle}
+            className="p-1.5 rounded-md hover:bg-bg-hover text-text-secondary transition-colors text-base"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -159,20 +196,30 @@ export default function AppPage() {
             ) : (
               <div className="space-y-1">
                 {knowledgeBases.map((kb) => (
-                  <button
-                    key={kb.id}
-                    onClick={() => selectKnowledgeBase(kb.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      selectedKb?.id === kb.id
-                        ? "bg-accent-muted text-accent"
-                        : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-                    }`}
-                  >
-                    <div className="font-medium truncate">{kb.name}</div>
-                    <div className="text-xs text-text-muted mt-0.5">
-                      {new Date(kb.createdAt).toLocaleDateString()}
-                    </div>
-                  </button>
+                  <div key={kb.id} className="group relative">
+                    <button
+                      onClick={() => selectKnowledgeBase(kb.id)}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                        selectedKb?.id === kb.id
+                          ? "bg-accent-muted text-accent"
+                          : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                      }`}
+                    >
+                      <div className="font-medium truncate pr-6">{kb.name}</div>
+                      <div className="text-xs text-text-muted mt-0.5">
+                        {new Date(kb.createdAt).toLocaleDateString()}
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteKnowledgeBase(kb.id); }}
+                      className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-danger/20 text-text-muted hover:text-danger transition-all"
+                      aria-label={`Delete ${kb.name}`}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -185,7 +232,7 @@ export default function AppPage() {
             <>
               {/* Messages */}
               <div className="flex-1 overflow-y-auto">
-                <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+                <div className="px-6 py-6 space-y-6">
                   {messages.length === 0 && (
                     <div className="text-center py-20">
                       <div className="w-16 h-16 rounded-2xl bg-accent-muted flex items-center justify-center mx-auto mb-4">
@@ -238,7 +285,7 @@ export default function AppPage() {
               <div className="border-t border-border-subtle p-4">
                 <form
                   onSubmit={sendMessage}
-                  className="max-w-3xl mx-auto flex gap-3"
+                  className="flex gap-3"
                 >
                   <input
                     type="text"

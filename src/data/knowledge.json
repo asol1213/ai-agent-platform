@@ -17,104 +17,30 @@
           "role": "assistant",
           "content": "Based on the knowledge base, Fahrschule Autopilot is built on a modern technology stack:\n\n**Frontend:** Next.js\n**Backend:** Supabase (database and authentication)\n**Automation:** n8n for workflow automation\n**Architecture:** Multi-tenant architecture with isolated environments per driving school\n\nThe platform also integrates with external services like Google Maps for route planning and Stripe for payment processing.",
           "timestamp": "2024-12-15T10:05:01.000Z"
-        }
-      ]
-    },
-    {
-      "id": "test-kb-mnol5vo4",
-      "name": "Test KB",
-      "content": "Next.js is a React framework for production apps. It supports SSR and static generation. TypeScript works out of the box.",
-      "createdAt": "2026-04-07T12:18:58.324Z",
-      "chatHistory": []
-    },
-    {
-      "id": "test-mnol6ie6",
-      "name": "Test",
-      "content": "Hello world test content.",
-      "createdAt": "2026-04-07T12:19:27.774Z",
-      "chatHistory": []
-    },
-    {
-      "id": "next-js-guide-mnol6r8c",
-      "name": "Next.js Guide",
-      "content": "Next.js is a React framework for production. It supports server-side rendering and static site generation. TypeScript is supported out of the box. The App Router uses file-based routing with layout and page files.",
-      "createdAt": "2026-04-07T12:19:39.228Z",
-      "chatHistory": [
+        },
         {
-          "id": "msg-mnol6r9vlj5g",
+          "id": "msg-mnomceqttpem",
           "role": "user",
-          "content": "What is Next.js?",
-          "timestamp": "2026-04-07T12:19:39.283Z"
+          "content": "What features does it have?",
+          "timestamp": "2026-04-07T12:52:02.597Z"
         },
         {
-          "id": "msg-mnol6r9veuz8",
+          "id": "msg-mnomcequrt3h",
           "role": "assistant",
-          "content": "I couldn't find relevant information about that in the knowledge base. Try rephrasing your question or asking about a different topic covered in the documents.",
-          "timestamp": "2026-04-07T12:19:39.283Z"
-        }
-      ]
-    },
-    {
-      "id": "test-mnol7piv",
-      "name": "Test",
-      "content": "Next.js is a React framework for production. It supports server-side rendering. TypeScript works out of the box. The App Router uses file-based routing.",
-      "createdAt": "2026-04-07T12:20:23.671Z",
-      "chatHistory": [
+          "content": "Here's what I found in the knowledge base:\n\nAI Chatbot: One of the flagship features is an AI-powered chatbot that handles student inquiries 24/7. The chatbot is trained on driving school-specific knowledge including pricing, scheduling, theory exam preparation, and German driving regulations (Fahrerlaubnisverordnung). It uses RAG (Retrieval Augmented Generation) to pull from a curated knowledge base of driving school FAQs and regulatory information. The chatbot reduced manual inquiry handling by approximately 60%.",
+          "timestamp": "2026-04-07T12:52:02.598Z"
+        },
         {
-          "id": "msg-mnol7pkej5ua",
+          "id": "msg-mnomcerb38h1",
           "role": "user",
-          "content": "What is Next.js?",
-          "timestamp": "2026-04-07T12:20:23.726Z"
+          "content": "How many API routes?",
+          "timestamp": "2026-04-07T12:52:02.615Z"
         },
         {
-          "id": "msg-mnol7pkews1x",
+          "id": "msg-mnomcercu6pi",
           "role": "assistant",
-          "content": "I couldn't find relevant information about that in the knowledge base. Try rephrasing your question or asking about a different topic covered in the documents.",
-          "timestamp": "2026-04-07T12:20:23.726Z"
-        }
-      ]
-    },
-    {
-      "id": "framework-guide-mnol8s1n",
-      "name": "Framework Guide",
-      "content": "Next.js is a React framework for production. It supports server-side rendering and static generation. TypeScript works out of the box. The App Router uses file-based routing with layout and page files. Supabase is a PostgreSQL database with realtime subscriptions.",
-      "createdAt": "2026-04-07T12:21:13.595Z",
-      "chatHistory": [
-        {
-          "id": "msg-mnol8s30y7eo",
-          "role": "user",
-          "content": "What is Next.js?",
-          "timestamp": "2026-04-07T12:21:13.644Z"
-        },
-        {
-          "id": "msg-mnol8s3123zl",
-          "role": "assistant",
-          "content": "Based on the knowledge base, here's the relevant information:\n\nNext.js is a React framework for production.",
-          "timestamp": "2026-04-07T12:21:13.645Z"
-        },
-        {
-          "id": "msg-mnol8s3e8746",
-          "role": "user",
-          "content": "Tell me about Supabase",
-          "timestamp": "2026-04-07T12:21:13.658Z"
-        },
-        {
-          "id": "msg-mnol8s3ezagg",
-          "role": "assistant",
-          "content": "Here's what I found in the knowledge base:\n\nSupabase is a PostgreSQL database with realtime subscriptions.",
-          "timestamp": "2026-04-07T12:21:13.658Z"
-        },
-        {
-          "id": "msg-mnol8s3v78vr",
-          "role": "user",
-          "content": "Does it support TypeScript?",
-          "timestamp": "2026-04-07T12:21:13.675Z"
-        },
-        {
-          "id": "msg-mnol8s3vhdxa",
-          "role": "assistant",
-          "content": "Here's what I found in the knowledge base:\n\nIt supports server-side rendering and static generation.\n\nTypeScript works out of the box.",
-          "timestamp": "2026-04-07T12:21:13.675Z"
+          "content": "Here's what I found regarding your question:\n\nAPI Architecture: The 72 API endpoints are organized into logical groups — authentication (8 endpoints), student management (14 endpoints), scheduling (12 endpoints), payments (10 endpoints), instructor management (8 endpoints), chatbot (6 endpoints), analytics (8 endpoints), and administration (6 endpoints). All endpoints follow RESTful conventions with comprehensive error handling and rate limiting.\n\nFahrschule Autopilot is a comprehensive SaaS platform built for driving schools in Germany. The platform spans 37 pages of functionality and integrates 72 API endpoints to power every aspect of driving school operations.\n\nInstructor Dashboard: Driving instructors have a dedicated dashboard showing their daily schedule, student progress, vehicle assignments, and route planning. The dashboard integrates with Google Maps for optimal lesson route suggestions based on the student's skill level and upcoming exam routes.",
+          "timestamp": "2026-04-07T12:52:02.616Z"
         }
       ]
     }
