@@ -4,6 +4,8 @@ A full-stack AI knowledge base agent platform built with Next.js, TypeScript, an
 
 **Built by Andrew Arbo** — AI/Automation Engineer
 
+**[Live Demo](https://ai-agent-platform-gamma.vercel.app)**
+
 ## Features
 
 - **Knowledge Base Management** — Create multiple knowledge bases from pasted text or documents
