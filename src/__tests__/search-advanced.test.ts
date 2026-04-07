@@ -57,9 +57,10 @@ Vue.js is a progressive JavaScript framework for building user interfaces. Unlik
     expect(results).toEqual([]);
   });
 
-  it("query with only stop words returns empty", () => {
+  it("query with only stop words returns fallback context", () => {
     const results = findRelevantChunks(content, "what is the");
-    expect(results).toEqual([]);
+    // Now returns first chunks as fallback instead of empty
+    expect(results.length).toBeGreaterThan(0);
   });
 
   it("score ordering: higher-scoring chunks come first", () => {
