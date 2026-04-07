@@ -103,38 +103,46 @@ export default function NewKnowledgeBasePage() {
     e.preventDefault();
     setError("");
 
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    const trimmedContent = content.trim();
+
+    if (!trimmedName) {
       setError("Please enter a name for your knowledge base.");
       return;
     }
-    if (!content.trim()) {
+    if (!trimmedContent) {
       setError("Please paste some content for your knowledge base.");
       return;
     }
-    if (content.trim().length < 50) {
+    if (trimmedContent.length < 50) {
       setError("Content should be at least 50 characters for meaningful results.");
       return;
     }
 
     setLoading(true);
-    try {
-      const res = await fetch("/api/knowledge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), content: content.trim() }),
-      });
+    setError("");
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create knowledge base");
-      }
-
-      window.location.href = "/app";
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
+    const res = await fetch("/api/knowledge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: trimmedName, content: trimmedContent }),
+    }).catch((err) => {
+      setError("Network error: " + (err instanceof Error ? err.message : "Failed to connect"));
       setLoading(false);
+      return null;
+    });
+
+    if (!res) return;
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Unknown error" }));
+      setError(data.error || "Failed to create knowledge base");
+      setLoading(false);
+      return;
     }
+
+    // Success — navigate
+    window.location.href = "/app";
   }
 
   return (
