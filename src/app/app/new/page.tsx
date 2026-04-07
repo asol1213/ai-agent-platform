@@ -3,13 +3,6 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-type PDFjsLib = typeof import("pdfjs-dist");
-
-async function getPdfjs(): Promise<PDFjsLib> {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-  return pdfjsLib;
-}
 
 export default function NewKnowledgeBasePage() {
   const router = useRouter();
@@ -42,18 +35,26 @@ export default function NewKnowledgeBasePage() {
       if (ext === "txt") {
         text = await file.text();
       } else {
-        const pdfjsLib = await getPdfjs();
+        // Client-side PDF parsing with pdfjs-dist
+        const pdfjsModule = await import("pdfjs-dist");
+        const pdfjsLib = pdfjsModule.default || pdfjsModule;
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+        }
+
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const uint8 = new Uint8Array(arrayBuffer);
+        const loadingTask = pdfjsLib.getDocument({ data: uint8 });
+        const pdf = await loadingTask.promise;
         const totalPages = pdf.numPages;
         const pageTexts: string[] = [];
 
         for (let i = 1; i <= totalPages; i++) {
           setUploadStatus(`Parsing page ${i}/${totalPages}...`);
           const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const pageText = content.items
-            .map((item) => ("str" in item ? item.str : ""))
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: Record<string, unknown>) => (item.str as string) || "")
             .join(" ");
           pageTexts.push(pageText);
         }
@@ -62,15 +63,14 @@ export default function NewKnowledgeBasePage() {
       }
 
       setContent(text);
-      setUploadStatus(`Extracted text from ${file.name}`);
+      setUploadStatus(`✓ Extracted text from ${file.name}`);
 
-      // Auto-fill name from filename if empty
       if (!name.trim()) {
-        const baseName = file.name.replace(/\.[^.]+$/, "");
-        setName(baseName);
+        setName(file.name.replace(/\.[^.]+$/, ""));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse file");
+      console.error("PDF parse error:", err);
+      setError(`Failed to parse file: ${err instanceof Error ? err.message : "Unknown error"}. Try pasting the text manually instead.`);
       setUploadStatus("");
     }
   }
