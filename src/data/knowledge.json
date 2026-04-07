@@ -19,6 +19,60 @@
           "timestamp": "2024-12-15T10:05:01.000Z"
         }
       ]
+    },
+    {
+      "id": "test-kb-mnol5vo4",
+      "name": "Test KB",
+      "content": "Next.js is a React framework for production apps. It supports SSR and static generation. TypeScript works out of the box.",
+      "createdAt": "2026-04-07T12:18:58.324Z",
+      "chatHistory": []
+    },
+    {
+      "id": "test-mnol6ie6",
+      "name": "Test",
+      "content": "Hello world test content.",
+      "createdAt": "2026-04-07T12:19:27.774Z",
+      "chatHistory": []
+    },
+    {
+      "id": "next-js-guide-mnol6r8c",
+      "name": "Next.js Guide",
+      "content": "Next.js is a React framework for production. It supports server-side rendering and static site generation. TypeScript is supported out of the box. The App Router uses file-based routing with layout and page files.",
+      "createdAt": "2026-04-07T12:19:39.228Z",
+      "chatHistory": [
+        {
+          "id": "msg-mnol6r9vlj5g",
+          "role": "user",
+          "content": "What is Next.js?",
+          "timestamp": "2026-04-07T12:19:39.283Z"
+        },
+        {
+          "id": "msg-mnol6r9veuz8",
+          "role": "assistant",
+          "content": "I couldn't find relevant information about that in the knowledge base. Try rephrasing your question or asking about a different topic covered in the documents.",
+          "timestamp": "2026-04-07T12:19:39.283Z"
+        }
+      ]
+    },
+    {
+      "id": "test-mnol7piv",
+      "name": "Test",
+      "content": "Next.js is a React framework for production. It supports server-side rendering. TypeScript works out of the box. The App Router uses file-based routing.",
+      "createdAt": "2026-04-07T12:20:23.671Z",
+      "chatHistory": [
+        {
+          "id": "msg-mnol7pkej5ua",
+          "role": "user",
+          "content": "What is Next.js?",
+          "timestamp": "2026-04-07T12:20:23.726Z"
+        },
+        {
+          "id": "msg-mnol7pkews1x",
+          "role": "assistant",
+          "content": "I couldn't find relevant information about that in the knowledge base. Try rephrasing your question or asking about a different topic covered in the documents.",
+          "timestamp": "2026-04-07T12:20:23.726Z"
+        }
+      ]
     }
   ]
 }

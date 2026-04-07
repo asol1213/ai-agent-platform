@@ -98,11 +98,24 @@ export function addChatMessage(
  * based on keyword overlap with the user's question.
  */
 export function findRelevantChunks(content: string, query: string, topK = 3): string[] {
-  // Split content into paragraphs
-  const chunks = content
+  // Split content into chunks: try paragraphs first, then sentences
+  let chunks = content
     .split(/\n\n+/)
     .map((c) => c.trim())
     .filter((c) => c.length > 20);
+
+  // If we got 0-1 chunks, split by sentences instead
+  if (chunks.length <= 1) {
+    chunks = content
+      .split(/(?<=[.!?])\s+/)
+      .map((c) => c.trim())
+      .filter((c) => c.length > 10);
+  }
+
+  // If still nothing, use the whole content as one chunk
+  if (chunks.length === 0 && content.trim().length > 0) {
+    chunks = [content.trim()];
+  }
 
   // Extract keywords from query (remove stop words, lowercase)
   const stopWords = new Set([
