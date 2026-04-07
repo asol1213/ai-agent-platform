@@ -22,20 +22,28 @@ interface StoreData {
   knowledgeBases: KnowledgeBase[];
 }
 
+// In-memory cache — survives across requests in the same serverless instance
+// Initialized from the JSON file on first read
+let memoryStore: StoreData | null = null;
+
 function readStore(): StoreData {
+  if (memoryStore) return memoryStore;
   try {
     const raw = fs.readFileSync(DATA_PATH, "utf-8");
-    return JSON.parse(raw);
+    memoryStore = JSON.parse(raw);
+    return memoryStore!;
   } catch {
-    return { knowledgeBases: [] };
+    memoryStore = { knowledgeBases: [] };
+    return memoryStore;
   }
 }
 
 function writeStore(data: StoreData): void {
+  memoryStore = data;
   try {
     fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf-8");
   } catch {
-    // Vercel serverless: writes don't persist, but that's OK for demo
+    // Vercel serverless: file writes don't persist, but in-memory cache does
   }
 }
 
