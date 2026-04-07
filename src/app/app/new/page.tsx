@@ -3,6 +3,13 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+type PDFjsLib = typeof import("pdfjs-dist");
+
+async function getPdfjs(): Promise<PDFjsLib> {
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  return pdfjsLib;
+}
 
 export default function NewKnowledgeBasePage() {
   const router = useRouter();
@@ -30,21 +37,31 @@ export default function NewKnowledgeBasePage() {
     setUploadStatus(`Parsing ${file.name}...`);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      let text = "";
 
-      const res = await fetch("/api/parse", {
-        method: "POST",
-        body: formData,
-      });
+      if (ext === "txt") {
+        text = await file.text();
+      } else {
+        const pdfjsLib = await getPdfjs();
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdf.numPages;
+        const pageTexts: string[] = [];
 
-      const data = await res.json();
+        for (let i = 1; i <= totalPages; i++) {
+          setUploadStatus(`Parsing page ${i}/${totalPages}...`);
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items
+            .map((item) => ("str" in item ? item.str : ""))
+            .join(" ");
+          pageTexts.push(pageText);
+        }
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to parse file");
+        text = pageTexts.join("\n\n");
       }
 
-      setContent(data.text);
+      setContent(text);
       setUploadStatus(`Extracted text from ${file.name}`);
 
       // Auto-fill name from filename if empty

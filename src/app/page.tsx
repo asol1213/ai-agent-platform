@@ -184,14 +184,14 @@ function LiveDemo() {
       </div>
 
       {/* Messages area */}
-      <div className="h-80 overflow-y-auto px-5 py-4 space-y-4">
+      <div className="h-[28rem] overflow-y-auto px-5 py-4 space-y-4">
         {messages.length === 0 && !isStreaming && (
           <div className="text-center py-8">
             <p className="text-sm text-text-secondary mb-3">
               Try asking about the Fahrschule Autopilot platform:
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {["What tech stack is used?", "How does the chatbot work?", "How many API endpoints?"].map((q) => (
+              {["What tech stack is used?", "How does the chatbot work?", "How many API routes?", "What languages does the chatbot support?", "Tell me about the automation workflows", "What database is used?"].map((q) => (
                 <button
                   key={q}
                   onClick={() => {
@@ -355,6 +355,15 @@ export default function LandingPage() {
         </div>
         <div className="max-w-2xl mx-auto">
           <LiveDemo />
+          <div className="mt-4 flex flex-col items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20 text-success text-xs font-medium">
+              <div className="w-2 h-2 rounded-full bg-success" />
+              Powered by Smart Search — no AI API needed
+            </div>
+            <p className="text-xs text-text-muted text-center">
+              Try asking: How many API routes? What languages does the chatbot support? Tell me about the automation workflows
+            </p>
+          </div>
         </div>
       </section>
 
