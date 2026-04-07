@@ -41,6 +41,18 @@
           "role": "assistant",
           "content": "Here's what I found regarding your question:\n\nAPI Architecture: The 72 API endpoints are organized into logical groups — authentication (8 endpoints), student management (14 endpoints), scheduling (12 endpoints), payments (10 endpoints), instructor management (8 endpoints), chatbot (6 endpoints), analytics (8 endpoints), and administration (6 endpoints). All endpoints follow RESTful conventions with comprehensive error handling and rate limiting.\n\nFahrschule Autopilot is a comprehensive SaaS platform built for driving schools in Germany. The platform spans 37 pages of functionality and integrates 72 API endpoints to power every aspect of driving school operations.\n\nInstructor Dashboard: Driving instructors have a dedicated dashboard showing their daily schedule, student progress, vehicle assignments, and route planning. The dashboard integrates with Google Maps for optimal lesson route suggestions based on the student's skill level and upcoming exam routes.",
           "timestamp": "2026-04-07T12:52:02.616Z"
+        },
+        {
+          "id": "msg-mnomxa50qsj3",
+          "role": "user",
+          "content": "What is this platform?",
+          "timestamp": "2026-04-07T13:08:16.404Z"
+        },
+        {
+          "id": "msg-mnomxa505zyi",
+          "role": "assistant",
+          "content": "Based on the knowledge base, here's the relevant information:\n\nFahrschule Autopilot is a comprehensive SaaS platform built for driving schools in Germany. The platform spans 37 pages of functionality and integrates 72 API endpoints to power every aspect of driving school operations.\n\nCore Architecture: The platform is built on a modern stack with Next.js for the frontend, Supabase for the backend database and authentication, and n8n for workflow automation. The system uses a multi-tenant architecture where each driving school operates in an isolated environment with their own data.\n\nStudent Management: The platform includes a complete student lifecycle management system — from initial registration and document verification through theory lessons, practical driving sessions, exam scheduling, and license issuance tracking. Students can view their progress, book lessons, and communicate with instructors through a dedicated portal.",
+          "timestamp": "2026-04-07T13:08:16.404Z"
         }
       ]
     }

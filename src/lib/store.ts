@@ -32,7 +32,11 @@ function readStore(): StoreData {
 }
 
 function writeStore(data: StoreData): void {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf-8");
+  try {
+    fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Vercel serverless: writes don't persist, but that's OK for demo
+  }
 }
 
 export function getAllKnowledgeBases(): Omit<KnowledgeBase, "content" | "chatHistory">[] {

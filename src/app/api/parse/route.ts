@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: Request) {
@@ -25,11 +23,19 @@ export async function POST(request: Request) {
   }
 
   if (fileName.endsWith(".pdf")) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const parser = new PDFParse({ data: buffer });
-    const text = await parser.getText();
-    parser.destroy();
-    return Response.json({ text });
+    try {
+      const { PDFParse } = await import("pdf-parse");
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const parser = new PDFParse({ data: buffer });
+      const text = await parser.getText();
+      parser.destroy();
+      return Response.json({ text });
+    } catch {
+      return Response.json(
+        { error: "PDF parsing not available in this environment" },
+        { status: 501 }
+      );
+    }
   }
 
   return Response.json(
