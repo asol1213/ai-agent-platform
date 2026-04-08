@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import { useTheme } from "./theme-provider";
 
 const features = [
@@ -217,19 +218,25 @@ function LiveDemo() {
                   : "bg-bg-tertiary text-text-primary"
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                {msg.content}
-              </p>
+              {msg.role === "assistant" ? (
+                <div className="chat-markdown text-sm leading-relaxed">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {msg.content}
+                </p>
+              )}
             </div>
           </div>
         ))}
         {isStreaming && streamingContent && (
           <div className="flex justify-start">
             <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 bg-bg-tertiary text-text-primary">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                {streamingContent}
+              <div className="chat-markdown text-sm leading-relaxed">
+                <ReactMarkdown>{streamingContent}</ReactMarkdown>
                 <span className="inline-block w-0.5 h-4 bg-accent ml-0.5 animate-pulse" />
-              </p>
+              </div>
             </div>
           </div>
         )}

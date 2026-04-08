@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import { useTheme } from "../theme-provider";
 
 interface KnowledgeBaseSource {
@@ -42,12 +43,15 @@ export default function AppPage() {
   const [streamingContent, setStreamingContent] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [kbLoading, setKbLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/knowledge")
       .then((res) => res.json())
-      .then((data) => setKnowledgeBases(data.knowledgeBases));
+      .then((data) => setKnowledgeBases(data.knowledgeBases))
+      .finally(() => setKbLoading(false));
   }, []);
 
   const scrollToBottom = useCallback(() => {
@@ -82,6 +86,13 @@ export default function AppPage() {
       body: JSON.stringify({ action: "clearChat" }),
     });
     setMessages([]);
+  }
+
+  function copyMessage(id: string, content: string) {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
   }
 
   async function sendMessage(e: React.FormEvent) {
@@ -281,7 +292,38 @@ export default function AppPage() {
 
         {/* Main chat area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {selectedKb ? (
+          {kbLoading ? (
+            /* Loading skeleton while knowledge bases load */
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+                <div className="flex justify-end">
+                  <div className="w-48 h-10 rounded-2xl bg-bg-tertiary animate-pulse" />
+                </div>
+                <div className="flex justify-start">
+                  <div className="w-72 space-y-2">
+                    <div className="h-10 rounded-2xl bg-bg-tertiary animate-pulse" />
+                    <div className="h-10 rounded-2xl bg-bg-tertiary animate-pulse w-56" />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <div className="w-40 h-10 rounded-2xl bg-bg-tertiary animate-pulse" />
+                </div>
+                <div className="flex justify-start">
+                  <div className="w-64 space-y-2">
+                    <div className="h-10 rounded-2xl bg-bg-tertiary animate-pulse" />
+                    <div className="h-10 rounded-2xl bg-bg-tertiary animate-pulse w-48" />
+                    <div className="h-10 rounded-2xl bg-bg-tertiary animate-pulse w-36" />
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-border-subtle p-4">
+                <div className="flex gap-3">
+                  <div className="flex-1 h-12 rounded-xl bg-bg-tertiary animate-pulse" />
+                  <div className="w-12 h-12 rounded-xl bg-bg-tertiary animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ) : selectedKb ? (
             <>
               {/* Messages */}
               <div className="flex-1 overflow-y-auto">
@@ -306,26 +348,44 @@ export default function AppPage() {
                       key={msg.id}
                       className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                     >
-                      <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                          msg.role === "user"
-                            ? "bg-accent text-white"
-                            : "bg-bg-tertiary text-text-primary"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {msg.content}
-                        </p>
+                      <div className="group/msg max-w-[80%]">
+                        <div
+                          className={`rounded-2xl px-4 py-3 ${
+                            msg.role === "user"
+                              ? "bg-accent text-white"
+                              : "bg-bg-tertiary text-text-primary"
+                          }`}
+                        >
+                          {msg.role === "assistant" ? (
+                            <div className="chat-markdown text-sm leading-relaxed">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                              {msg.content}
+                            </p>
+                          )}
+                        </div>
+                        {msg.role === "assistant" && (
+                          <div className="mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => copyMessage(msg.id, msg.content)}
+                              className="px-2 py-1 text-xs text-text-muted hover:text-text-secondary rounded-md hover:bg-bg-hover transition-colors"
+                            >
+                              {copiedId === msg.id ? "Copied!" : "Copy"}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                   {isStreaming && streamingContent && (
                     <div className="flex justify-start">
                       <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-bg-tertiary text-text-primary">
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {streamingContent}
+                        <div className="chat-markdown text-sm leading-relaxed">
+                          <ReactMarkdown>{streamingContent}</ReactMarkdown>
                           <span className="inline-block w-0.5 h-4 bg-accent ml-0.5 animate-pulse" />
-                        </p>
+                        </div>
                       </div>
                     </div>
                   )}

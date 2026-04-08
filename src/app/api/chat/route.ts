@@ -50,6 +50,8 @@ Rules:
 - Be conversational and helpful
 - Support questions in any language (German, English, etc.)
 - Keep answers focused and under 200 words
+- Format your responses using Markdown: use **bold** for emphasis, bullet lists for multiple items, and \`code\` for technical terms
+- Use headers (##) to organize longer responses
 
 Knowledge Base: "${kb.name}"
 
