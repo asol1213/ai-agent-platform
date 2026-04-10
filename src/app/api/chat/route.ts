@@ -1,7 +1,7 @@
 import { getKnowledgeBase, addChatMessage, findRelevantChunks } from "@/lib/store";
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -33,15 +33,7 @@ export async function POST(request: Request) {
 
   let responseText: string;
 
-  if (process.env.GROQ_API_KEY) {
-    // Real AI response via Groq
-    try {
-      const chatCompletion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: `You are a helpful AI assistant that answers questions based ONLY on the provided knowledge base content.
+  const systemPrompt = `You are a helpful AI assistant that answers questions based ONLY on the provided knowledge base content.
 
 Rules:
 - Answer based on the context provided below
@@ -56,25 +48,48 @@ Rules:
 Knowledge Base: "${kb.name}"
 
 Context from the knowledge base:
-${context}`
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500,
-      });
+${context}`;
 
-      responseText = chatCompletion.choices[0]?.message?.content || "No response generated.";
-    } catch (err) {
-      console.error("Groq API error:", err);
-      // Fallback to keyword search if API fails
-      responseText = fallbackResponse(relevantChunks, kb.content, message);
-    }
-  } else {
-    // No API key — fallback to keyword search
+  const messages = [{ role: "system" as const, content: systemPrompt }, { role: "user" as const, content: message }];
+
+  // Try providers: Groq → Cerebras → OpenRouter → keyword fallback
+
+  // 1. Groq
+  if (groq) {
+    try {
+      const res = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages, temperature: 0.3, max_tokens: 500 });
+      responseText = res.choices[0]?.message?.content || "";
+    } catch (e) { console.log("Groq failed:", (e as Error).message?.slice(0, 80)); }
+  }
+
+  // 2. Cerebras
+  if (!responseText && process.env.CEREBRAS_API_KEY) {
+    try {
+      const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.CEREBRAS_API_KEY}` },
+        body: JSON.stringify({ model: "llama3.1-8b", messages, temperature: 0.3, max_tokens: 500 }),
+      });
+      const data = await res.json();
+      responseText = data.choices?.[0]?.message?.content || "";
+    } catch (e) { console.log("Cerebras failed:", (e as Error).message?.slice(0, 80)); }
+  }
+
+  // 3. OpenRouter
+  if (!responseText && process.env.OPENROUTER_API_KEY) {
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` },
+        body: JSON.stringify({ model: "google/gemma-3-27b-it:free", messages, temperature: 0.3, max_tokens: 500 }),
+      });
+      const data = await res.json();
+      responseText = data.choices?.[0]?.message?.content || "";
+    } catch (e) { console.log("OpenRouter failed:", (e as Error).message?.slice(0, 80)); }
+  }
+
+  // 4. Keyword fallback
+  if (!responseText) {
     responseText = fallbackResponse(relevantChunks, kb.content, message);
   }
 
