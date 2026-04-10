@@ -87,7 +87,9 @@ function LiveDemo() {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0 || streamingContent) {
+      scrollToBottom();
+    }
   }, [messages, streamingContent, scrollToBottom]);
 
   async function sendMessage(e: React.FormEvent) {
