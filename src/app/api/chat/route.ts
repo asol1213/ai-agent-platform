@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     ? relevantChunks.join("\n\n")
     : kb.content.slice(0, 2000);
 
-  let responseText: string;
+  let responseText = "";
 
   const systemPrompt = `You are a helpful AI assistant that answers questions based ONLY on the provided knowledge base content.
 
