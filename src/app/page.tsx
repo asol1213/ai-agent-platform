@@ -83,7 +83,10 @@ function LiveDemo() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only within the messages container, not the whole page
+    if (messagesEndRef.current?.parentElement) {
+      messagesEndRef.current.parentElement.scrollTop = messagesEndRef.current.parentElement.scrollHeight;
+    }
   }, []);
 
   useEffect(() => {
@@ -284,6 +287,11 @@ function LiveDemo() {
 
 export default function LandingPage() {
   const { theme, toggle } = useTheme();
+
+  // Force scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="min-h-screen">
